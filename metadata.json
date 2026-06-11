@@ -2,5 +2,7 @@
   "name": "TrackWise SME Sales & Inventory",
   "description": "A smart sales and inventory management system for SMEs with AI-powered forecasting, business profiles, and secure isolated data.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

@@ -99,18 +99,24 @@ export default function Sales() {
       setLoading(true);
       const [productsRes, salesRes] = await Promise.all([
         supabase.from('products').select('*').order('name'),
-        supabase.from('sales').select('*, products(name)').order('created_at', { ascending: false })
+        supabase.from('sales').select('*').order('created_at', { ascending: false })
       ]);
 
       if (productsRes.error) throw productsRes.error;
       if (salesRes.error) throw salesRes.error;
 
-      setProducts(productsRes.data || []);
+      const prods = productsRes.data || [];
+      const prodMap: Record<string, string> = {};
+      prods.forEach((p: any) => {
+        prodMap[p.id] = p.name;
+      });
+
+      setProducts(prods);
       setSales(salesRes.data?.map(s => {
         const localCustomer = localStorage.getItem(`trackwise_customer_name_${s.id}`);
         return {
           ...s,
-          product_name: s.products?.name,
+          product_name: prodMap[s.product_id] || s.product_name,
           customer_name: s.customer_name || localCustomer || undefined
         };
       }) || []);

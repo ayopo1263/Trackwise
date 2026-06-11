@@ -33,17 +33,35 @@ export default function DailyRevenueDetail() {
   useEffect(() => {
     async function fetchSales() {
       try {
-        const { data, error } = await supabase
-          .from('sales')
-          .select('*, products(name)')
-          .order('created_at', { ascending: false });
+        const [salesRes, productsRes] = await Promise.all([
+          supabase
+            .from('sales')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('products')
+            .select('*')
+        ]);
 
-        if (error) throw error;
-        const mappedData = (data || []).map((s: any) => ({
-          ...s,
-          product_name: s.product_name || s.products?.name || undefined,
-          customer_name: s.customer_name || localStorage.getItem(`trackwise_customer_name_${s.id}`) || undefined
-        }));
+        if (salesRes.error) throw salesRes.error;
+
+        const prodMap: Record<string, string> = {};
+        if (productsRes.data) {
+          productsRes.data.forEach((p: any) => {
+            prodMap[p.id] = p.name;
+          });
+        }
+
+        const mappedData = (salesRes.data || []).map((s: any) => {
+          const pName = prodMap[s.product_id] || s.product_name;
+
+          return {
+            ...s,
+            product_name: pName || undefined,
+            customer_name: s.customer_name || localStorage.getItem(`trackwise_customer_name_${s.id}`) || undefined
+          };
+        });
+
         setSales(mappedData);
       } catch (err) {
         console.error('Error fetching sales for daily breakdown:', err);
