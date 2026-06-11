@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --color-trackwise-bg: #f1f5f9;
+  --color-trackwise-card: #ffffff;
+  --color-trackwise-accent: #0f172a;
+  --color-trackwise-border: #cbd5e1;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-trackwise-bg text-slate-950 font-sans antialiased;
+  }
+
+  input, select, textarea {
+    @apply bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-slate-500 focus:outline-none focus:border-slate-800 transition-shadow;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+}
+
+.dashboard-card {
+  @apply bg-trackwise-card border border-slate-300 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow;
+}
+
+.table-header {
+  @apply text-xs font-black uppercase tracking-wider text-slate-800 py-3 px-4 border-b border-slate-300 text-left;
+}
+
+.table-cell {
+  @apply py-4 px-4 border-b border-slate-200 text-sm font-semibold text-slate-900;
+}
+
+@media print {
+  /* Hide absolute everything in the page */
+  body, html, #root, main, nav, aside, div, header, section, footer, button, table {
+    visibility: hidden !important;
+    background: transparent !important;
+  }
+  
+  /* Selectively make the receipt modal container and ALL of its children visible */
+  .receipt-modal-container,
+  .receipt-modal-container * {
+    visibility: visible !important;
+  }
+  
+  /* Align the modal exactly to the top left of the printable page with no margin */
+  .receipt-modal-container {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    z-index: 99999 !important;
+  }
+  
+  /* Hide print-hidden sections */
+  .receipt-modal-container .print\:hidden,
+  .receipt-modal-container button {
+    display: none !important;
+  }
+}
