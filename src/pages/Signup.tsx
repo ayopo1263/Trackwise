@@ -24,7 +24,7 @@ export default function Signup() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/login`,
         data: {
           business_name: businessName.trim() || null,
         }
