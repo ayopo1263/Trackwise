@@ -100,7 +100,7 @@ export default function Dashboard() {
     .filter(s => isWithinInterval(new Date(s.created_at), { start: monthStart, end: monthEnd }))
     .reduce((sum, s) => sum + s.total_price, 0);
 
-  const lowStockProducts = products.filter(p => p.stock_quantity <= lowLimit);
+  const lowStockProducts = products.filter(p => p.stock_quantity <= criticalLimit);
 
   // AI Forecasting Logic
   const dailyChartData = groupSalesByDate(sales);
@@ -162,7 +162,7 @@ export default function Dashboard() {
           value={lowStockProducts.length.toString()} 
           icon={<AlertTriangle className={lowStockProducts.length > 0 ? "text-orange-600" : "text-slate-400"} />} 
           color={lowStockProducts.length > 0 ? "bg-orange-50" : "bg-slate-50"}
-          subtitle={lowStockProducts.length > 0 ? `${lowStockProducts.length} items <= ${lowLimit} units (Click to view)` : 'Click to see low stock levels'}
+          subtitle={lowStockProducts.length > 0 ? `${lowStockProducts.length} items <= ${criticalLimit} units (Click to view)` : 'Click to see low stock levels'}
           onClick={() => setShowLowStockModal(true)}
         />
       </div>
@@ -367,7 +367,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-950 uppercase tracking-wider">Low Stock Inventory</h3>
-                  <p className="text-slate-500 text-[9px] font-bold uppercase">STOCKS &lt;= {lowLimit} UNITS</p>
+                  <p className="text-slate-500 text-[9px] font-bold uppercase">STOCKS &lt;= {criticalLimit} UNITS</p>
                 </div>
               </div>
               <button 
