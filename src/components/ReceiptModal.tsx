@@ -37,12 +37,12 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
   const totalCharge = sales.reduce((sum, s) => sum + s.total_price, 0);
 
   return (
-    <div className="receipt-modal-container fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-8 bg-slate-900/40 backdrop-blur-sm print:fixed print:inset-0 print:bg-white print:p-0 print:m-0">
+    <div className="receipt-modal-container fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-8 bg-slate-900/40 backdrop-blur-sm print:absolute print:inset-x-0 print:top-0 print:h-auto print:min-h-full print:bg-white print:p-0 print:m-0">
       <style>{`
         @media print {
           @page {
             size: portrait;
-            margin: 0;
+            margin: 20px;
           }
           /* Hide everything in the document body by default */
           body * {
@@ -53,19 +53,19 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
           .receipt-modal-container * {
             visibility: visible !important;
           }
-          /* Maximize the printable modal container space safely */
+          /* Maximize the printable modal container space safely, allowing flexible self-sizing and scaling */
           .receipt-modal-container {
-            position: fixed !important;
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
-            height: 100% !important;
+            height: auto !important;
+            min-height: 100% !important;
             margin: 0 !important;
-            padding: 32px !important;
+            padding: 16px !important;
             background-color: #ffffff !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            display: block !important;
+            overflow: visible !important;
             z-index: 9999999 !important;
           }
           /* Remove print controls headers from page output */
@@ -75,17 +75,17 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
             padding: 0 !important;
             margin: 0 !important;
           }
-          /* Force printable receipt card elements to look professional and avoiding breaks */
+          /* Force printable receipt card elements to look professional and allowing natural multi-page break-word heights */
           .receipt-modal-container > div {
             border: none !important;
             box-shadow: none !important;
             margin: 0 auto !important;
             padding: 0 !important;
             width: 100% !important;
-            max-width: 440px !important;
+            max-width: 480px !important;
             height: auto !important;
             overflow: visible !important;
-            page-break-inside: avoid !important;
+            page-break-inside: auto !important;
           }
         }
       `}</style>
@@ -93,7 +93,7 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 print:shadow-none print:border-none print:p-0 my-auto"
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 print:shadow-none print:border-none print:p-0 my-auto print:max-w-none print:overflow-visible"
       >
         {/* Modal Controls (Hidden in print) */}
         <div className="receipt-modal-control-bar flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 print:hidden">
@@ -156,7 +156,7 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
           )}
 
           {/* Transaction Summary Line Items */}
-          <div className="border-y border-slate-100 py-3 space-y-3 max-h-[220px] overflow-y-auto pr-1">
+          <div className="border-y border-slate-100 py-3 space-y-3 max-h-[350px] overflow-y-auto pr-1 print:max-h-none print:overflow-visible">
             <div className="flex justify-between items-center text-xs font-black text-slate-900 border-b border-slate-100 pb-1.5 uppercase">
               <span>Item Catalog Descr.</span>
               <span>Subtotal</span>

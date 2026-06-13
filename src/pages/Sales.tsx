@@ -536,10 +536,10 @@ export default function Sales() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 lg:h-[calc(100vh-12rem)] lg:min-h-[550px] items-start">
         {/* Record Sale Container */}
-        <div className="lg:col-span-1">
-          <div className="bg-white border-2 border-slate-300 rounded-xl p-6 shadow-md md:sticky md:top-24 space-y-5">
+        <div className="lg:col-span-1 lg:h-full lg:overflow-y-auto lg:pr-1 [scrollbar-width:thin]">
+          <div className="bg-white border-2 border-slate-300 rounded-xl p-6 shadow-md space-y-5">
             <div>
               <h2 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
                 <ShoppingCart size={20} className="text-slate-800" />
@@ -835,7 +835,7 @@ export default function Sales() {
         </div>
 
         {/* Sales History */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 lg:h-full lg:overflow-y-auto lg:pr-1 [scrollbar-width:thin]">
           <div className="bg-white border-2 border-slate-300 rounded-xl shadow-md overflow-hidden">
             <div className="p-6 border-b border-slate-250 flex justify-between items-center flex-wrap gap-4">
               <h2 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
