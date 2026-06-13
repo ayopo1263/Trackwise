@@ -14,14 +14,11 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
   const handlePrint = () => {
     // Derive stable receipt metadata
     const referenceSale = sales[0];
-    const receiptNo = `TW-${referenceSale.id.slice(0, 8).toUpperCase()}`;
-    const customerSuffix = referenceSale?.customer_name 
-      ? `_${referenceSale.customer_name.replace(/[^a-zA-Z0-9]/g, '_')}` 
-      : '_WalkIn';
+    const customerName = referenceSale?.customer_name || 'Customer';
     
     const originalTitle = document.title;
     // Set customized document title for print-to-PDF file name
-    document.title = `Receipt_${receiptNo}${customerSuffix}`;
+    document.title = `"${customerName}" trackwise receipt`;
     
     window.print();
     
@@ -39,54 +36,52 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
   const totalCharge = sales.reduce((sum, s) => sum + s.total_price, 0);
 
   return (
-    <div className="receipt-modal-container fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-8 print:p-0 print:static print:bg-white bg-slate-900/40 backdrop-blur-sm">
+    <div className="receipt-modal-container fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-8 bg-slate-900/40 backdrop-blur-sm print:fixed print:inset-0 print:bg-white print:p-0 print:m-0">
       <style>{`
         @media print {
-          /* Force page size configuration and hide other layouts */
           @page {
             size: portrait;
             margin: 0;
           }
-          html, body {
-            background-color: #ffffff !important;
-            height: auto !important;
-            min-height: 0 !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            padding: 0 !important;
+          /* Hide everything in the document body by default */
+          body * {
+            visibility: hidden !important;
           }
-          #root {
-            display: none !important;
-          }
-          /* Hide global absolute layout overheads */
-          nav, footer, .print\\:hidden, button, input, select, textarea {
-            display: none !important;
-            height: 0 !important;
-          }
-          .receipt-modal-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: block !important;
-            visibility: visible !important;
-            background: #ffffff !important;
-            z-index: 999999 !important;
-          }
+          /* Ensure our specific receipt-modal-container is fully visible and isolated */
+          .receipt-modal-container,
           .receipt-modal-container * {
             visibility: visible !important;
           }
-          /* Center the card cleanly with no extra space/pagebreak */
+          /* Maximize the printable modal container space safely */
+          .receipt-modal-container {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 32px !important;
+            background-color: #ffffff !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 9999999 !important;
+          }
+          /* Remove print controls headers from page output */
+          .receipt-modal-control-bar {
+            display: none !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          /* Force printable receipt card elements to look professional and avoiding breaks */
           .receipt-modal-container > div {
             border: none !important;
             box-shadow: none !important;
             margin: 0 auto !important;
-            padding: 24px !important;
+            padding: 0 !important;
             width: 100% !important;
-            max-width: 420px !important;
+            max-width: 440px !important;
             height: auto !important;
             overflow: visible !important;
             page-break-inside: avoid !important;

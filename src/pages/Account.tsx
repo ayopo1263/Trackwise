@@ -152,6 +152,7 @@ export default function Account() {
       localStorage.setItem('trackwise_monthly_goal', parsedTarget.toString());
       localStorage.setItem('trackwise_low_stock_limit', parsedLow.toString());
       localStorage.setItem('trackwise_critical_stock_limit', parsedCritical.toString());
+      localStorage.setItem('trackwise_limits_customized', 'true');
 
       setBusinessName(businessNameInput.trim());
       setProfileSuccess('Account credentials, goals, & stock limits updated successfully!');
