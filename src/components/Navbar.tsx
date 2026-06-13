@@ -24,7 +24,7 @@ export default function Navbar() {
     { name: 'Products', path: '/products', icon: Package },
     { name: 'Sales', path: '/sales', icon: ShoppingCart },
     { name: 'Supply Chain', path: '/supply-chain', icon: RefreshCw },
-    { name: 'Forecast Guide', path: '/forecast-guide', icon: BrainCircuit },
+    // { name: 'Forecast Guide', path: '/forecast-guide', icon: BrainCircuit },
     { name: 'My Account', path: '/account', icon: User },
   ];
 

@@ -14,7 +14,8 @@ import {
   ArrowDownRight,
   Info,
   HelpCircle,
-  Calculator
+  Calculator,
+  Sparkles
 } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth, isSameDay, isWithinInterval } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +33,8 @@ export default function Dashboard() {
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showLowStockModal, setShowLowStockModal] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [lowLimit, setLowLimit] = useState(() => {
     const saved = localStorage.getItem('trackwise_low_stock_limit');
     return saved ? parseInt(saved, 10) : 10;
@@ -44,24 +47,55 @@ export default function Dashboard() {
   const fetchUser = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.user_metadata) {
-        if (user.user_metadata.business_name) {
-          setBusinessName(user.user_metadata.business_name);
+      if (user) {
+        const welcomeKey = `trackwise_welcome_${user.id}`;
+        const emailKey = user.email ? `trackwise_just_registered_${user.email.toLowerCase().trim()}` : '';
+        const isNewRegister = emailKey ? localStorage.getItem(emailKey) === 'true' : false;
+
+        if (isNewRegister) {
+          if (!localStorage.getItem(welcomeKey)) {
+            setShowWelcome(true);
+          }
+        } else {
+          // Old user: welcome back pick up where you left off
+          const sessionGreetKey = `trackwise_greeted_${user.id}`;
+          if (!sessionStorage.getItem(sessionGreetKey)) {
+            setShowWelcomeBack(true);
+          }
         }
-        if (user.user_metadata.low_stock_limit !== undefined) {
-          const lVal = parseInt(user.user_metadata.low_stock_limit);
-          setLowLimit(lVal);
-          localStorage.setItem('trackwise_low_stock_limit', lVal.toString());
-        }
-        if (user.user_metadata.critical_stock_limit !== undefined) {
-          const cVal = parseInt(user.user_metadata.critical_stock_limit);
-          setCriticalLimit(cVal);
-          localStorage.setItem('trackwise_critical_stock_limit', cVal.toString());
+        
+        if (user.user_metadata) {
+          if (user.user_metadata.business_name) {
+            setBusinessName(user.user_metadata.business_name);
+          }
+          if (user.user_metadata.low_stock_limit !== undefined) {
+            const lVal = parseInt(user.user_metadata.low_stock_limit);
+            setLowLimit(lVal);
+            localStorage.setItem('trackwise_low_stock_limit', lVal.toString());
+          }
+          if (user.user_metadata.critical_stock_limit !== undefined) {
+            const cVal = parseInt(user.user_metadata.critical_stock_limit);
+            setCriticalLimit(cVal);
+            localStorage.setItem('trackwise_critical_stock_limit', cVal.toString());
+          }
         }
       }
     } catch (err) {
       console.error('Error fetching user metadata:', err);
     }
+  };
+
+  const handleDismissWelcome = () => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        localStorage.setItem(`trackwise_welcome_${user.id}`, 'true');
+        const emailKey = user.email ? `trackwise_just_registered_${user.email.toLowerCase().trim()}` : '';
+        if (emailKey) {
+          localStorage.removeItem(emailKey);
+        }
+      }
+    });
+    setShowWelcome(false);
   };
 
   const fetchData = async () => {
@@ -115,6 +149,43 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Welcome Back Session Banner */}
+      {showWelcomeBack && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 bg-sky-50 border-4 border-slate-950 rounded-2xl flex items-center justify-between shadow-lg relative"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-slate-950 text-sky-400 rounded-xl">
+              <Sparkles size={20} className="animate-pulse" />
+            </div>
+            <div>
+              <p className="text-base font-black text-slate-950">
+                Welcome back, {businessName || 'TrackWise Partner'}! 👋
+              </p>
+              <p className="text-xs text-slate-700 font-bold">
+                Pick up where you left off. Let's check today's performance insights.
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={() => {
+              supabase.auth.getUser().then(({ data: { user } }) => {
+                if (user) {
+                  sessionStorage.setItem(`trackwise_greeted_${user.id}`, 'true');
+                }
+              });
+              setShowWelcomeBack(false);
+            }}
+            className="px-3 py-1.5 bg-slate-950 hover:bg-slate-850 text-white font-extrabold text-[10px] uppercase rounded-lg border-2 border-slate-950 transition-colors cursor-pointer select-none"
+          >
+            ✕ Dismiss
+          </button>
+        </motion.div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-3xl font-black text-slate-950 tracking-tight">
@@ -228,14 +299,6 @@ export default function Dashboard() {
                   <p className="text-slate-700 text-sm font-bold">Forecasting based on historical trends</p>
                 </div>
               </div>
-              <button
-                onClick={() => navigate('/forecast-guide')}
-                className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-colors hover:bg-slate-800 cursor-pointer select-none"
-                title="See dynamic step-by-step math solver"
-              >
-                <Calculator size={12} />
-                See Math Details
-              </button>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6">
@@ -428,6 +491,55 @@ export default function Dashboard() {
                 className="px-4 py-3 bg-slate-50 border border-slate-300 hover:bg-slate-150 text-slate-700 font-black text-xs uppercase rounded-xl transition-colors cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome Onboarding Modal */}
+      {showWelcome && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-white border-4 border-slate-950 rounded-2xl p-8 shadow-2xl w-full max-w-lg relative animate-fade-in text-center space-y-4">
+            <div className="inline-flex p-3 bg-sky-50 text-sky-600 rounded-full border border-sky-200 animate-bounce">
+              <Sparkles size={32} className="text-sky-600" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-slate-950">Welcome to TrackWise! 🎉</h2>
+            <p className="text-slate-700 text-sm font-semibold leading-relaxed">
+              We're excited to help you manage your business sales and inventory with intelligent forecasting.
+            </p>
+
+            <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 text-left space-y-2">
+              <p className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                To customize your workspace now:
+              </p>
+              <ul className="text-xs text-slate-700 font-bold list-disc list-inside space-y-1">
+                <li>Set your <b>Monthly Sales Goal Target</b> values</li>
+                <li>Configure your <b>Safety Stock Alerts</b> (Low & Critical stock)</li>
+                <li>Customize your <b>Business Name</b> branding for receipts</li>
+              </ul>
+            </div>
+
+            <p className="text-[10px] text-slate-500 font-semibold italic">
+              These settings drive the real-time indicators and receipts across your workspace!
+            </p>
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                onClick={() => {
+                  handleDismissWelcome();
+                  navigate('/account?tab=settings');
+                }}
+                className="flex-1 bg-slate-950 hover:bg-slate-850 text-white font-extrabold text-xs uppercase py-3.5 px-4 rounded-xl transition-all cursor-pointer text-center shadow-md border-b-2 border-slate-800"
+              >
+                Go to Page Settings ⚙️
+              </button>
+              <button
+                onClick={handleDismissWelcome}
+                className="px-5 py-3.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-extrabold text-xs uppercase rounded-xl transition-colors cursor-pointer"
+              >
+                Explore first
               </button>
             </div>
           </div>

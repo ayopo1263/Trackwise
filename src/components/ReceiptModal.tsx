@@ -12,7 +12,23 @@ interface ReceiptModalProps {
 
 export default function ReceiptModal({ sales, businessName, onClose }: ReceiptModalProps) {
   const handlePrint = () => {
+    // Derive stable receipt metadata
+    const referenceSale = sales[0];
+    const receiptNo = `TW-${referenceSale.id.slice(0, 8).toUpperCase()}`;
+    const customerSuffix = referenceSale?.customer_name 
+      ? `_${referenceSale.customer_name.replace(/[^a-zA-Z0-9]/g, '_')}` 
+      : '_WalkIn';
+    
+    const originalTitle = document.title;
+    // Set customized document title for print-to-PDF file name
+    document.title = `Receipt_${receiptNo}${customerSuffix}`;
+    
     window.print();
+    
+    // Restore original document title shortly after print dialog is triggered
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 150);
   };
 
   if (!sales || sales.length === 0) return null;
@@ -24,6 +40,59 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
 
   return (
     <div className="receipt-modal-container fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-8 print:p-0 print:static print:bg-white bg-slate-900/40 backdrop-blur-sm">
+      <style>{`
+        @media print {
+          /* Force page size configuration and hide other layouts */
+          @page {
+            size: portrait;
+            margin: 0;
+          }
+          html, body {
+            background-color: #ffffff !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          #root {
+            display: none !important;
+          }
+          /* Hide global absolute layout overheads */
+          nav, footer, .print\\:hidden, button, input, select, textarea {
+            display: none !important;
+            height: 0 !important;
+          }
+          .receipt-modal-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+            visibility: visible !important;
+            background: #ffffff !important;
+            z-index: 999999 !important;
+          }
+          .receipt-modal-container * {
+            visibility: visible !important;
+          }
+          /* Center the card cleanly with no extra space/pagebreak */
+          .receipt-modal-container > div {
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 auto !important;
+            padding: 24px !important;
+            width: 100% !important;
+            max-width: 420px !important;
+            height: auto !important;
+            overflow: visible !important;
+            page-break-inside: avoid !important;
+          }
+        }
+      `}</style>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -31,7 +100,7 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
         className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 print:shadow-none print:border-none print:p-0 my-auto"
       >
         {/* Modal Controls (Hidden in print) */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 print:hidden">
+        <div className="receipt-modal-control-bar flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 print:hidden">
           <span className="text-xs font-black uppercase text-slate-800 flex items-center gap-1">
             <FileText size={14} className="text-slate-600" />
             Invoice Receipt ({sales.length} {sales.length === 1 ? 'item' : 'items'})

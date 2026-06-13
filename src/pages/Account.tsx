@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
   Settings, 
@@ -22,7 +22,20 @@ import {
 
 export default function Account() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
+  const location = useLocation();
+  
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>(() => {
+    const params = new URLSearchParams(location.search);
+    return (params.get('tab') as 'profile' | 'settings') || 'profile';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'settings' || tab === 'profile') {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
   
   // User profile loaded states
   const [email, setEmail] = useState('');
@@ -39,6 +52,10 @@ export default function Account() {
   // Passwords show/hide
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Safety stock thresholds state defaults
+  const [lowLimitInput, setLowLimitInput] = useState('10');
+  const [criticalLimitInput, setCriticalLimitInput] = useState('0');
 
   // Feedback states
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
@@ -69,6 +86,20 @@ export default function Account() {
             });
             setCreatedAt(dateStr);
           }
+
+          if (user.user_metadata?.low_stock_limit !== undefined) {
+            setLowLimitInput(user.user_metadata.low_stock_limit.toString());
+          } else {
+            const savedLow = localStorage.getItem('trackwise_low_stock_limit');
+            if (savedLow) setLowLimitInput(savedLow);
+          }
+
+          if (user.user_metadata?.critical_stock_limit !== undefined) {
+            setCriticalLimitInput(user.user_metadata.critical_stock_limit.toString());
+          } else {
+            const savedCrit = localStorage.getItem('trackwise_critical_stock_limit');
+            if (savedCrit) setCriticalLimitInput(savedCrit);
+          }
         }
 
         // Load monthly goal target too
@@ -97,21 +128,33 @@ export default function Account() {
     setProfileError(null);
 
     try {
-      // 1. Update Supabase business name metadata
+      const parsedLow = parseInt(lowLimitInput, 10);
+      const parsedCritical = parseInt(criticalLimitInput, 10);
+      if (isNaN(parsedLow) || parsedLow < 0 || isNaN(parsedCritical) || parsedCritical < 0) {
+        throw new Error('Safety stock limits must be non-negative integers.');
+      }
+
+      // 1. Update Supabase business name and stock limits metadata
       const { error: userError } = await supabase.auth.updateUser({
-        data: { business_name: businessNameInput.trim() || null }
+        data: { 
+          business_name: businessNameInput.trim() || null,
+          low_stock_limit: parsedLow,
+          critical_stock_limit: parsedCritical
+        }
       });
       if (userError) throw userError;
 
-      // 2. Update local storage target goal
+      // 2. Update local storage target goal & safety stock limits
       const parsedTarget = parseFloat(targetInput);
       if (isNaN(parsedTarget) || parsedTarget <= 0) {
         throw new Error('Please enter a valid positive target goal (₦).');
       }
       localStorage.setItem('trackwise_monthly_goal', parsedTarget.toString());
+      localStorage.setItem('trackwise_low_stock_limit', parsedLow.toString());
+      localStorage.setItem('trackwise_critical_stock_limit', parsedCritical.toString());
 
       setBusinessName(businessNameInput.trim());
-      setProfileSuccess('Account credentials & target updated successfully!');
+      setProfileSuccess('Account credentials, goals, & stock limits updated successfully!');
     } catch (err: any) {
       setProfileError(err.message || 'Error updating metadata.');
     } finally {
@@ -250,18 +293,13 @@ export default function Account() {
                       <Calendar size={20} />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 uppercase font-extrabold tracking-wider block">Account Created</span>
+                      <span className="text-[10px] text-slate-600 uppercase font-extrabold tracking-wider block">Account Provisioned</span>
                       <span className="text-base font-black text-slate-950">{createdAt || 'Not Available'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500 font-bold">
-                  <span className="flex items-center gap-1.5 bg-sky-50 text-sky-800 px-3 py-1.5 rounded-lg border border-sky-100 font-extrabold">
-                    <Sparkles size={13} className="text-sky-600 animate-pulse" />
-                    Supabase Managed Auth & Session Secure
-                  </span>
-                </div>
+
               </motion.div>
             ) : (
               <motion.div
@@ -324,6 +362,45 @@ export default function Account() {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold italic mt-1 pl-1">
                         Controls the progress thresholds and forecasting multipliers shown on your dashboard.
+                      </p>
+                    </div>
+
+                    {/* Stock Limit Thresholds Section */}
+                    <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200 mt-2 space-y-4">
+                      <span className="block text-xs font-black text-slate-900 uppercase tracking-widest border-b pb-1.5 border-slate-200">
+                        Safety Stock Limits Settings
+                      </span>
+                      
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wider mb-1">
+                            Low Stock Alert (Units)
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full text-xs font-bold py-2 px-3 bg-white"
+                            min="1"
+                            required
+                            value={lowLimitInput}
+                            onChange={(e) => setLowLimitInput(Math.max(1, parseInt(e.target.value) || 1).toString())}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wider mb-1">
+                            Critical alert (Units)
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full text-xs font-bold py-2 px-3 bg-white"
+                            min="0"
+                            required
+                            value={criticalLimitInput}
+                            onChange={(e) => setCriticalLimitInput(Math.max(0, parseInt(e.target.value) || 0).toString())}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-600 font-bold leading-normal">
+                        Products with stock levels at or below these quantities will display a yellow label (low stock) or a red label (critical stock alert) on products list and dashboards.
                       </p>
                     </div>
 
