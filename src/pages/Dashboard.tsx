@@ -43,6 +43,10 @@ export default function Dashboard() {
     const saved = localStorage.getItem('trackwise_critical_stock_limit');
     return saved ? parseInt(saved, 10) : 0;
   });
+  const [limitsCustomized, setLimitsCustomized] = useState(() => {
+    const saved = localStorage.getItem('trackwise_limits_customized');
+    return saved === 'true';
+  });
 
   const fetchUser = async () => {
     try {
@@ -50,12 +54,17 @@ export default function Dashboard() {
       if (user) {
         const welcomeKey = `trackwise_welcome_${user.id}`;
         const emailKey = user.email ? `trackwise_just_registered_${user.email.toLowerCase().trim()}` : '';
-        const isNewRegister = emailKey ? localStorage.getItem(emailKey) === 'true' : false;
+        const hasOnboarded = localStorage.getItem(welcomeKey) === 'true';
+        const hasJustRegistered = emailKey ? localStorage.getItem(emailKey) === 'true' : false;
 
-        if (isNewRegister) {
-          if (!localStorage.getItem(welcomeKey)) {
-            setShowWelcome(true);
-          }
+        // Account age limit of 24 hours to separate old and brand new users
+        const accountAgeMs = Date.now() - new Date(user.created_at).getTime();
+        const isRecentlyCreated = accountAgeMs < 24 * 60 * 60 * 1000;
+
+        const isNewUser = !hasOnboarded && (hasJustRegistered || isRecentlyCreated);
+
+        if (isNewUser) {
+          setShowWelcome(true);
         } else {
           // Old user: welcome back pick up where you left off
           const sessionGreetKey = `trackwise_greeted_${user.id}`;
@@ -72,12 +81,25 @@ export default function Dashboard() {
             const lVal = parseInt(user.user_metadata.low_stock_limit);
             setLowLimit(lVal);
             localStorage.setItem('trackwise_low_stock_limit', lVal.toString());
+            setLimitsCustomized(true);
+            localStorage.setItem('trackwise_limits_customized', 'true');
+          } else {
+            const saved = localStorage.getItem('trackwise_limits_customized');
+            if (saved === 'true') {
+              setLimitsCustomized(true);
+            } else {
+              setLimitsCustomized(false);
+              localStorage.setItem('trackwise_limits_customized', 'false');
+            }
           }
           if (user.user_metadata.critical_stock_limit !== undefined) {
             const cVal = parseInt(user.user_metadata.critical_stock_limit);
             setCriticalLimit(cVal);
             localStorage.setItem('trackwise_critical_stock_limit', cVal.toString());
           }
+        } else {
+          setLimitsCustomized(false);
+          localStorage.setItem('trackwise_limits_customized', 'false');
         }
       }
     } catch (err) {
@@ -230,11 +252,17 @@ export default function Dashboard() {
         />
         <StatCard 
           title="Low Stock Alerts" 
-          value={lowStockProducts.length.toString()} 
-          icon={<AlertTriangle className={lowStockProducts.length > 0 ? "text-orange-600" : "text-slate-400"} />} 
-          color={lowStockProducts.length > 0 ? "bg-orange-50" : "bg-slate-50"}
-          subtitle={lowStockProducts.length > 0 ? `${lowStockProducts.length} items <= ${criticalLimit} units (Click to view)` : 'Click to see low stock levels'}
-          onClick={() => setShowLowStockModal(true)}
+          value={limitsCustomized ? lowStockProducts.length.toString() : '—'} 
+          icon={<AlertTriangle className={!limitsCustomized ? "text-slate-400" : (lowStockProducts.length > 0 ? "text-orange-600" : "text-slate-400")} />} 
+          color={!limitsCustomized ? "bg-slate-50" : (lowStockProducts.length > 0 ? "bg-orange-50" : "bg-slate-50")}
+          subtitle={!limitsCustomized ? "User has not customized stock limits" : (lowStockProducts.length > 0 ? `${lowStockProducts.length} items <= ${criticalLimit} units (Click to view)` : 'Click to see low stock levels')}
+          onClick={() => {
+            if (!limitsCustomized) {
+              navigate('/account?tab=settings');
+            } else {
+              setShowLowStockModal(true);
+            }
+          }}
         />
       </div>
 

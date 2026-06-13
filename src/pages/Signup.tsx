@@ -20,7 +20,7 @@ export default function Signup() {
     setError(null);
     setSuccess(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -40,8 +40,13 @@ export default function Signup() {
       setLoading(false);
     } else {
       setLoading(false);
-      setSuccess('Signup successful! Check your email for a confirmation link.');
-      localStorage.setItem('trackwise_just_registered_' + email.toLowerCase().trim(), 'true');
+      // In Supabase, if the user already exists, it silently succeeds but returns an empty identities array.
+      if (data?.user && data.user.identities && data.user.identities.length === 0) {
+        setError('An account with this email address already exists. Please sign in instead.');
+      } else {
+        setSuccess('Signup successful! Check your email for a confirmation link.');
+        localStorage.setItem('trackwise_just_registered_' + email.toLowerCase().trim(), 'true');
+      }
     }
   };
 
@@ -166,8 +171,9 @@ export default function Signup() {
               <input
                 type={showPassword ? "text" : "password"}
                 required
+                minLength={8}
                 className="w-full pl-10 pr-10"
-                placeholder="Minimum 6 characters"
+                placeholder="Minimum 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

@@ -15,10 +15,11 @@ export default function ReceiptModal({ sales, businessName, onClose }: ReceiptMo
     // Derive stable receipt metadata
     const referenceSale = sales[0];
     const customerName = referenceSale?.customer_name || 'Customer';
+    const rNo = referenceSale ? `TW-${referenceSale.id.slice(0, 8).toUpperCase()}` : '';
     
     const originalTitle = document.title;
     // Set customized document title for print-to-PDF file name
-    document.title = `"${customerName}" trackwise receipt`;
+    document.title = `${customerName} trackwise receipt ${rNo}`.trim();
     
     window.print();
     

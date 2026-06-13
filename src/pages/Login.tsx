@@ -40,6 +40,10 @@ export default function Login() {
       }
       setLoading(false);
     } else {
+      const emailKey = email ? `trackwise_just_registered_${email.toLowerCase().trim()}` : '';
+      if (emailKey) {
+        localStorage.removeItem(emailKey);
+      }
       navigate('/');
     }
   };
@@ -88,7 +92,7 @@ export default function Login() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="absolute -top-10 -left-10 w-96 h-96 bg-linear-to-tr from-cyan-400/40 to-blue-500/35 rounded-full blur-[60px]"
+          className="absolute -top-10 -left-10 w-96 h-96 bg-gradient-to-tr from-cyan-400/40 to-blue-500/35 rounded-full blur-[60px]"
         />
         
         <motion.div

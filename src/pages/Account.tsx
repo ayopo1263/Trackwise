@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import SignOutConfirmationModal from '../components/SignOutConfirmationModal';
 import { 
   User, 
   Settings, 
@@ -23,6 +24,7 @@ import {
 export default function Account() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>(() => {
     const params = new URLSearchParams(location.search);
@@ -116,7 +118,8 @@ export default function Account() {
     loadUser();
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOutConfirmed = async () => {
+    setShowSignOutConfirm(false);
     await supabase.auth.signOut();
     navigate('/login');
   };
@@ -169,10 +172,10 @@ export default function Account() {
       setPasswordError('New passwords do not match.');
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters.');
-      return;
-    }
+    if (newPassword.length < 8) {
+       setPasswordError('Password must be at least 8 characters.');
+       return;
+     }
 
     setSavingPassword(true);
     setPasswordSuccess(null);
@@ -241,7 +244,7 @@ export default function Account() {
 
             <div className="pt-4 border-t border-slate-200 mt-4">
               <button
-                onClick={handleSignOut}
+                onClick={() => setShowSignOutConfirm(true)}
                 className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-bold text-red-700 hover:text-red-950 hover:bg-red-50 border border-transparent transition-all cursor-pointer"
               >
                 <LogOut size={18} />
@@ -456,8 +459,9 @@ export default function Account() {
                         <input
                           type={showNewPassword ? "text" : "password"}
                           required
+                          minLength={8}
                           className="w-full pl-10 pr-10"
-                          placeholder="At least 6 characters"
+                          placeholder="At least 8 characters"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                         />
@@ -512,6 +516,11 @@ export default function Account() {
           </div>
         </div>
       )}
+      <SignOutConfirmationModal
+        isOpen={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        onConfirm={handleSignOutConfirmed}
+      />
     </div>
   );
 }

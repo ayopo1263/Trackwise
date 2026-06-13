@@ -3,18 +3,21 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Package, ShoppingCart, LayoutDashboard, LogOut, RefreshCw, User, BrainCircuit, Menu, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+import SignOutConfirmationModal from './SignOutConfirmationModal';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   // Auto-close menu when navigation occurs
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
 
-  const handleSignOut = async () => {
+  const handleSignOutConfirmed = async () => {
+    setShowSignOutModal(false);
     await supabase.auth.signOut();
     navigate('/login');
   };
@@ -62,7 +65,7 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleSignOut}
+              onClick={() => setShowSignOutModal(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-wider text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-100 hover:border-red-600 rounded-xl transition-all cursor-pointer shadow-sm"
             >
               <LogOut size={14} />
@@ -113,6 +116,12 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignOutConfirmationModal
+        isOpen={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={handleSignOutConfirmed}
+      />
     </nav>
   );
 }
