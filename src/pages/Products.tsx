@@ -25,6 +25,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [userEmail, setUserEmail] = useState('');
   
   // Deletion modal states
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -124,18 +125,24 @@ export default function Products() {
   const fetchLimits = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.user_metadata) {
-        if (user.user_metadata.low_stock_limit !== undefined) {
-          const val = parseInt(user.user_metadata.low_stock_limit);
-          setLowLimit(val);
-          setNewLowLimit(val);
-          localStorage.setItem('trackwise_low_stock_limit', val.toString());
+      if (user) {
+        if (user.email) {
+          setUserEmail(user.email);
+          setInventoryLogs(getInventoryLogs(user.email));
         }
-        if (user.user_metadata.critical_stock_limit !== undefined) {
-          const val = parseInt(user.user_metadata.critical_stock_limit);
-          setCriticalLimit(val);
-          setNewCriticalLimit(val);
-          localStorage.setItem('trackwise_critical_stock_limit', val.toString());
+        if (user.user_metadata) {
+          if (user.user_metadata.low_stock_limit !== undefined) {
+            const val = parseInt(user.user_metadata.low_stock_limit);
+            setLowLimit(val);
+            setNewLowLimit(val);
+            localStorage.setItem('trackwise_low_stock_limit', val.toString());
+          }
+          if (user.user_metadata.critical_stock_limit !== undefined) {
+            const val = parseInt(user.user_metadata.critical_stock_limit);
+            setCriticalLimit(val);
+            setNewCriticalLimit(val);
+            localStorage.setItem('trackwise_critical_stock_limit', val.toString());
+          }
         }
       }
     } catch (err) {
@@ -159,14 +166,13 @@ export default function Products() {
     }
   };
 
-  const refreshLogs = () => {
-    setInventoryLogs(getInventoryLogs());
+  const refreshLogs = (email?: string) => {
+    setInventoryLogs(getInventoryLogs(email || userEmail));
   };
 
   useEffect(() => {
     fetchProducts();
     fetchLimits();
-    refreshLogs();
   }, []);
 
   const handleSaveLimits = async (e: React.FormEvent) => {

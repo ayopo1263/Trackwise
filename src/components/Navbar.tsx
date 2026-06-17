@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Package, ShoppingCart, LayoutDashboard, LogOut, RefreshCw, User, BrainCircuit, Menu, X } from 'lucide-react';
+import { Package, ShoppingCart, LayoutDashboard, LogOut, RefreshCw, User, BrainCircuit, Menu, X, Sparkles, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import SignOutConfirmationModal from './SignOutConfirmationModal';
@@ -27,7 +27,8 @@ export default function Navbar() {
     { name: 'Products', path: '/products', icon: Package },
     { name: 'Sales', path: '/sales', icon: ShoppingCart },
     { name: 'Supply Chain', path: '/supply-chain', icon: RefreshCw },
-    // { name: 'Forecast Guide', path: '/forecast-guide', icon: BrainCircuit },
+    { name: 'Best Sellers', path: '/best-sellers', icon: Sparkles },
+    { name: 'Peak Periods', path: '/peak-periods', icon: Clock },
     { name: 'My Account', path: '/account', icon: User },
   ];
 

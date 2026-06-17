@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
-import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +10,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionTimeoutNotice, setSessionTimeoutNotice] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('timeout') === 'true';
+  });
 
   // Forgot password flow states
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -195,6 +199,13 @@ export default function Login() {
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Welcome back</h1>
               <p className="text-slate-700 font-medium mt-2">Manage your inventory smarter with TrackWise</p>
             </div>
+
+            {sessionTimeoutNotice && (
+              <div className="mb-6 p-4 bg-sky-50 border-2 border-sky-300 text-sky-850 text-xs font-black rounded-xl flex items-center gap-2">
+                <AlertCircle size={16} className="text-sky-600 stroke-[3]" />
+                <span>Your login session has expired due to 15 minutes of inactivity. Please sign in again.</span>
+              </div>
+            )}
 
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">

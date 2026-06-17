@@ -48,6 +48,7 @@ export default function Account() {
   // Settings inputs
   const [businessNameInput, setBusinessNameInput] = useState('');
   const [targetInput, setTargetInput] = useState('500000');
+  const [systemStartDateInput, setSystemStartDateInput] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -87,6 +88,19 @@ export default function Account() {
               day: 'numeric' 
             });
             setCreatedAt(dateStr);
+          }
+
+          const savedStartDate = localStorage.getItem('trackwise_system_start_date');
+          if (savedStartDate) {
+            setSystemStartDateInput(savedStartDate);
+          } else if (user.created_at) {
+            const regDateStr = user.created_at.substring(0, 10); // YYYY-MM-DD
+            setSystemStartDateInput(regDateStr);
+            localStorage.setItem('trackwise_system_start_date', regDateStr);
+          } else {
+            const todayStr = new Date().toISOString().substring(0, 10);
+            setSystemStartDateInput(todayStr);
+            localStorage.setItem('trackwise_system_start_date', todayStr);
           }
 
           if (user.user_metadata?.low_stock_limit !== undefined) {
@@ -155,10 +169,11 @@ export default function Account() {
       localStorage.setItem('trackwise_monthly_goal', parsedTarget.toString());
       localStorage.setItem('trackwise_low_stock_limit', parsedLow.toString());
       localStorage.setItem('trackwise_critical_stock_limit', parsedCritical.toString());
+      localStorage.setItem('trackwise_system_start_date', systemStartDateInput);
       localStorage.setItem('trackwise_limits_customized', 'true');
 
       setBusinessName(businessNameInput.trim());
-      setProfileSuccess('Account credentials, goals, & stock limits updated successfully!');
+      setProfileSuccess('Account credentials, goals, start dates & stock limits updated successfully!');
     } catch (err: any) {
       setProfileError(err.message || 'Error updating metadata.');
     } finally {
@@ -297,7 +312,7 @@ export default function Account() {
                       <Calendar size={20} />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 uppercase font-extrabold tracking-wider block">Account Provisioned</span>
+                      <span className="text-[10px] text-slate-600 uppercase font-extrabold tracking-wider block">Date Created</span>
                       <span className="text-base font-black text-slate-950">{createdAt || 'Not Available'}</span>
                     </div>
                   </div>
@@ -366,6 +381,23 @@ export default function Account() {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold italic mt-1 pl-1">
                         Controls the progress thresholds and forecasting multipliers shown on your dashboard.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">System Tracking Start Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                          type="date"
+                          required
+                          className="w-full pl-10"
+                          value={systemStartDateInput}
+                          onChange={(e) => setSystemStartDateInput(e.target.value)}
+                        />
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-bold italic mt-1 pl-1">
+                        Determines the starting day of your monthly sales cycle (e.g., if set to June 12, cycles run from the 12th to the 11th of each month). Defaults to your account registration date.
                       </p>
                     </div>
 

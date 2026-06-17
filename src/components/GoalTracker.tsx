@@ -9,6 +9,9 @@ interface GoalTrackerProps {
 
 export default function GoalTracker({ monthlyRevenue, sales }: GoalTrackerProps) {
   const [goal, setGoal] = useState<number>(500000);
+  const [systemStartDate, setSystemStartDate] = useState<string>(() => {
+    return localStorage.getItem('trackwise_system_start_date') || '';
+  });
 
   // Load from local storage on mount
   useEffect(() => {
@@ -16,21 +19,31 @@ export default function GoalTracker({ monthlyRevenue, sales }: GoalTrackerProps)
     if (saved) {
       setGoal(parseFloat(saved));
     }
+    const savedStart = localStorage.getItem('trackwise_system_start_date');
+    if (savedStart) {
+      setSystemStartDate(savedStart);
+    }
   }, []);
 
   const today = new Date();
-  const startOfThisMonth = startOfMonth(today);
-  const endOfThisMonth = endOfMonth(today);
+  const startDate = systemStartDate ? new Date(systemStartDate) : startOfMonth(today);
+  const cycleDay = startDate.getDate() || 1;
+
+  let cycleStart = new Date(today.getFullYear(), today.getMonth(), cycleDay);
+  if (cycleStart > today) {
+    cycleStart = new Date(today.getFullYear(), today.getMonth() - 1, cycleDay);
+  }
+  const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleDay - 1);
   
   // Remaining days in month
-  const totalDaysInMonth = differenceInDays(endOfThisMonth, startOfThisMonth) + 1;
-  const daysElapsed = differenceInDays(today, startOfThisMonth) + 1;
+  const totalDaysInMonth = differenceInDays(cycleEnd, cycleStart) + 1;
+  const daysElapsed = Math.min(differenceInDays(today, cycleStart) + 1, totalDaysInMonth);
   const daysRemaining = Math.max(0, totalDaysInMonth - daysElapsed);
 
   // Calculate Average Daily Sales Revenue this month
   const currentMonthSales = sales.filter(s => {
     const d = new Date(s.created_at);
-    return isWithinInterval(d, { start: startOfThisMonth, end: endOfThisMonth });
+    return isWithinInterval(d, { start: cycleStart, end: cycleEnd });
   });
   
   const dailyVelocity = daysElapsed > 0 ? monthlyRevenue / daysElapsed : 0;
@@ -38,8 +51,13 @@ export default function GoalTracker({ monthlyRevenue, sales }: GoalTrackerProps)
   // Predict final outcome
   const projectedExtraRevenue = daysRemaining * dailyVelocity;
   const projectedTotalRevenue = monthlyRevenue + projectedExtraRevenue;
-  const percentageCompleted = Math.min((monthlyRevenue / goal) * 100, 100);
-  const projectedPercentage = Math.min((projectedTotalRevenue / goal) * 100, 101);
+
+  // Percentage calculations
+  const rawPercentageCompleted = (monthlyRevenue / goal) * 100;
+  const percentageCompleted = Math.min(rawPercentageCompleted, 100);
+
+  const rawProjectedPercentage = (projectedTotalRevenue / goal) * 100;
+  const projectedPercentage = Math.min(rawProjectedPercentage, 100);
 
   // Forecast state
   const isPredictedToSucceed = projectedTotalRevenue >= goal;
@@ -82,12 +100,15 @@ export default function GoalTracker({ monthlyRevenue, sales }: GoalTrackerProps)
               style={{ width: `${(daysElapsed / totalDaysInMonth) * 100}%` }}
             />
           </div>
+          <span className="text-[9px] text-slate-500 font-bold italic mt-1 block">
+            Cycle runs from {cycleStart.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})} to {cycleEnd.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}
+          </span>
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-1 text-[10px] font-black uppercase text-slate-800">
             <span>Target Attainment</span>
-            <span>{percentageCompleted.toFixed(1)}%</span>
+            <span>{rawPercentageCompleted.toFixed(1)}%</span>
           </div>
           <div className="h-3 w-full bg-slate-100 rounded-full border border-slate-200 overflow-hidden relative">
             <div 
@@ -126,7 +147,7 @@ export default function GoalTracker({ monthlyRevenue, sales }: GoalTrackerProps)
               <div className="font-extrabold text-emerald-950 uppercase tracking-wider text-[10px]">On Target to Succeed</div>
               <p className="text-slate-800 font-semibold mt-1">
                 At current sales velocity (₦{dailyVelocity.toFixed(2)}/day), your business is projected to reach{' '}
-                <strong className="text-emerald-900">₦{projectedTotalRevenue.toFixed(2)}</strong> ({projectedPercentage.toFixed(0)}% of goal) by month-end.
+                <strong className="text-emerald-900">₦{projectedTotalRevenue.toFixed(2)}</strong> ({rawProjectedPercentage.toFixed(0)}% of goal) by month-end.
               </p>
               <div className="text-emerald-800 font-extrabold text-[10px] mt-2 italic">
                 Recommendation: Maintain current product distribution level.
@@ -140,7 +161,7 @@ export default function GoalTracker({ monthlyRevenue, sales }: GoalTrackerProps)
               <div className="font-extrabold text-amber-950 uppercase tracking-wider text-[10px]">Target Deficit Forecasted</div>
               <p className="text-slate-800 font-semibold mt-1">
                 At current run-rate, your business is projected to reach{' '}
-                <strong className="text-slate-900">₦{projectedTotalRevenue.toFixed(2)}</strong> ({projectedPercentage.toFixed(0)}% of goal), leaving a gap of ₦{(goal - projectedTotalRevenue).toFixed(2)}.
+                <strong className="text-slate-900">₦{projectedTotalRevenue.toFixed(2)}</strong> ({rawProjectedPercentage.toFixed(0)}% of goal), leaving a gap of ₦{(goal - projectedTotalRevenue).toFixed(2)}.
               </p>
               <div className="text-amber-800 font-extrabold text-[10px] mt-2 italic">
                 Recommendation: Increase daily velocity by ₦{((goal - monthlyRevenue) / Math.max(1, daysRemaining) - dailyVelocity).toFixed(2)}/day to close the gap.

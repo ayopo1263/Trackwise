@@ -150,8 +150,17 @@ export default function Dashboard() {
     .filter(s => isSameDay(new Date(s.created_at), today))
     .reduce((sum, s) => sum + s.total_price, 0);
 
-  const monthStart = startOfMonth(today);
-  const monthEnd = endOfMonth(today);
+  // Custom cycle start date or fallback
+  const systemStartDate = localStorage.getItem('trackwise_system_start_date') || '';
+  const initialStartDate = systemStartDate ? new Date(systemStartDate) : startOfMonth(today);
+  const cycleDay = initialStartDate.getDate() || 1;
+
+  let monthStart = new Date(today.getFullYear(), today.getMonth(), cycleDay);
+  if (monthStart > today) {
+    monthStart = new Date(today.getFullYear(), today.getMonth() - 1, cycleDay);
+  }
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, cycleDay - 1);
+
   const monthlyRevenue = sales
     .filter(s => isWithinInterval(new Date(s.created_at), { start: monthStart, end: monthEnd }))
     .reduce((sum, s) => sum + s.total_price, 0);

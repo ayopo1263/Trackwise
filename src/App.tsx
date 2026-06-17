@@ -12,6 +12,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ResetPassword from './pages/ResetPassword';
 import SupplyChain from './pages/SupplyChain';
+import BestSellers from './pages/BestSellers';
+import PeakPeriods from './pages/PeakPeriods';
 import Account from './pages/Account';
 import ForecastGuide from './pages/ForecastGuide';
 import DailyRevenueDetail from './pages/DailyRevenueDetail';
@@ -48,6 +50,8 @@ function AppRoutes() {
           <Route path="/products" element={session ? <Products /> : <Navigate to="/login" />} />
           <Route path="/sales" element={session ? <Sales /> : <Navigate to="/login" />} />
           <Route path="/supply-chain" element={session ? <SupplyChain /> : <Navigate to="/login" />} />
+          <Route path="/best-sellers" element={session ? <BestSellers /> : <Navigate to="/login" />} />
+          <Route path="/peak-periods" element={session ? <PeakPeriods /> : <Navigate to="/login" />} />
           <Route path="/account" element={session ? <Account /> : <Navigate to="/login" />} />
           <Route path="/forecast-guide" element={session ? <ForecastGuide /> : <Navigate to="/login" />} />
           <Route path="/revenue/daily" element={session ? <DailyRevenueDetail /> : <Navigate to="/login" />} />
@@ -83,6 +87,47 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Automatic session timeout after 15 minutes of inactivity
+  useEffect(() => {
+    if (!session) return;
+
+    const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoLogout, TIMEOUT_DURATION);
+    };
+
+    const handleAutoLogout = async () => {
+      console.warn("User has been inactive for more than 15 minutes. Auditing session expiration...");
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error("Error signing out user:", err);
+      }
+      setSession(null);
+      window.location.href = '/login?timeout=true';
+    };
+
+    const userEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    // Register event listeners to monitor activity
+    userEvents.forEach(evt => {
+      window.addEventListener(evt, resetTimer);
+    });
+
+    // Start initial timer
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      userEvents.forEach(evt => {
+        window.removeEventListener(evt, resetTimer);
+      });
+    };
+  }, [session]);
 
   if (loading) {
     return (
