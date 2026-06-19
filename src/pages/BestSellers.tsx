@@ -7,6 +7,7 @@ export default function BestSellers() {
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   const fetchData = async () => {
     try {
@@ -60,10 +61,8 @@ export default function BestSellers() {
     };
   }, []);
 
-  // Compute Best Selling Products (Top 10 display)
+  // Compute Best Selling Products (Rank everything, including 0 sales)
   const bestSellingProducts = useMemo(() => {
-    if (sales.length === 0) return [];
-    
     const countMap: Record<string, { totalSold: number; totalRevenue: number; name: string }> = {};
     
     // Seed with existing product catalog names
@@ -86,12 +85,20 @@ export default function BestSellers() {
     });
 
     return Object.values(countMap)
-      .filter(item => item.totalSold > 0)
-      .sort((a, b) => b.totalSold - a.totalSold)
-      .slice(0, 10);
-  }, [products, sales]);
+      .sort((a, b) => {
+        if (sortOrder === 'desc') {
+          return b.totalSold - a.totalSold;
+        } else {
+          return a.totalSold - b.totalSold;
+        }
+      });
+  }, [products, sales, sortOrder]);
 
-  const maxSoldVolume = bestSellingProducts.length > 0 ? bestSellingProducts[0].totalSold : 1;
+  const maxSoldVolume = useMemo(() => {
+    if (bestSellingProducts.length === 0) return 1;
+    const max = Math.max(...bestSellingProducts.map(p => p.totalSold));
+    return max > 0 ? max : 1;
+  }, [bestSellingProducts]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -99,10 +106,10 @@ export default function BestSellers() {
         <div>
           <h1 className="text-3xl font-black text-slate-950 tracking-tight flex items-center gap-3">
             <Sparkles className="text-amber-500 animate-pulse" size={30} />
-            Best Selling Commodities
+            Best Saving & Velocity Rankings
           </h1>
           <p className="text-slate-700 font-bold mt-1 text-sm">
-            Live velocity rankings of top physical sales items in your inventory catalog.
+            Live velocity rankings of all physical items in your inventory catalog.
           </p>
         </div>
         <button
@@ -126,13 +133,28 @@ export default function BestSellers() {
         <div className="animate-fade-in space-y-6">
           <div className="bg-white border-2 border-slate-300 rounded-xl p-6 shadow-md">
             <div>
-              <h2 className="text-lg font-black text-slate-950 flex items-center gap-2 mb-1">
-                <BarChart2 className="text-slate-800" size={18} />
-                Live Commodity Rankings
-              </h2>
-              <p className="text-slate-600 text-xs font-bold mb-6">
-                Active list of your top 10 best-performing items ranked by raw volume sold, synced live.
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
+                <div>
+                  <h2 className="text-lg font-black text-slate-950 flex items-center gap-2 mb-1">
+                    <BarChart2 className="text-slate-800" size={18} />
+                    Live Commodity Rankings ({bestSellingProducts.length})
+                  </h2>
+                  <p className="text-slate-600 text-xs font-bold">
+                    Active performance listing of all catalog products compiled by volume, updated in real time.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-widest whitespace-nowrap">Sort:</span>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                    className="pl-3.5 pr-8 py-2 border-2 border-slate-250 focus:border-slate-800 focus:ring-0 text-xs font-black rounded-lg bg-white appearance-none cursor-pointer outline-none text-slate-950 min-w-[200px]"
+                  >
+                    <option value="desc">Best Sellers (High → Low)</option>
+                    <option value="asc">Slowest Sellers (Low → High)</option>
+                  </select>
+                </div>
+              </div>
 
               {bestSellingProducts.length === 0 ? (
                 <div className="text-center py-16 bg-slate-50 rounded-lg border border-slate-200">
@@ -177,7 +199,7 @@ export default function BestSellers() {
                 <div>
                   <span className="uppercase text-[9px] block text-amber-800 tracking-wider font-extrabold mb-1">MVP Catalog Insight</span>
                   <p className="text-slate-800">
-                    Your highest performing inventory commodity is <strong className="text-slate-950 underline">"{bestSellingProducts[0].name}"</strong> with a total volume of {bestSellingProducts[0].totalSold} individual sales, driving <strong className="text-slate-950">₦{bestSellingProducts[0].totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong> in premium revenue.
+                    Your highest performing inventory commodity is <strong className="text-slate-950 underline">"{sortOrder === 'desc' ? bestSellingProducts[0].name : bestSellingProducts[bestSellingProducts.length - 1].name}"</strong> with a total volume of {sortOrder === 'desc' ? bestSellingProducts[0].totalSold : bestSellingProducts[bestSellingProducts.length - 1].totalSold} individual sales, driving <strong className="text-slate-950">₦{(sortOrder === 'desc' ? bestSellingProducts[0].totalRevenue : bestSellingProducts[bestSellingProducts.length - 1].totalRevenue).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong> in premium revenue.
                   </p>
                 </div>
               </div>

@@ -160,21 +160,23 @@ export default function PeakPeriods() {
                 {peakPeriodsData.weekdayRevenue.map((d) => {
                   const percent = maxDayRevenue > 0 ? (d.revenue / maxDayRevenue) * 100 : 0;
                   return (
-                    <div key={d.day} className="space-y-1">
+                    <div key={d.day} className="space-y-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
-                        <span className="text-slate-900 w-24">{d.day}</span>
-                        <div className="flex-grow bg-slate-100 h-6.5 border border-slate-200 rounded-md overflow-hidden relative">
-                          <div 
-                            className="bg-indigo-600 h-full transition-all duration-500"
-                            style={{ width: `${percent}%` }}
-                          />
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-[10px] text-slate-900 font-extrabold mix-blend-difference">
+                        <span className="text-slate-900 font-black">{d.day}</span>
+                        <div className="flex items-center gap-2 font-mono text-[10px]">
+                          <span className="font-bold text-indigo-950 bg-indigo-100 px-2.5 py-0.5 rounded border border-indigo-200">
                             ₦{d.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
+                          <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold border border-slate-200">
+                            {d.transactions} txn{d.transactions !== 1 ? 's' : ''}
+                          </span>
                         </div>
-                        <span className="w-20 text-right font-mono text-[10px] text-slate-600">
-                          {d.transactions} txn{d.transactions !== 1 ? 's' : ''}
-                        </span>
+                      </div>
+                      <div className="h-4 w-full bg-slate-100 border border-slate-250 rounded-lg overflow-hidden relative">
+                        <div 
+                          className="h-full bg-indigo-400 transition-all duration-500"
+                          style={{ width: `${percent}%` }}
+                        />
                       </div>
                     </div>
                   );
@@ -209,21 +211,23 @@ export default function PeakPeriods() {
                 {peakPeriodsData.timeSlots.map((ts) => {
                   const percent = maxSlotRevenue > 0 ? (ts.revenue / maxSlotRevenue) * 100 : 0;
                   return (
-                    <div key={ts.slot} className="space-y-1">
-                      <div className="flex justify-between items-center text-xs font-bold text-slate-600">
-                        <span>{ts.slot}</span>
-                        <span className="font-mono text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-extrabold">
-                          {ts.count} transactions logged
-                        </span>
+                    <div key={ts.slot} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs font-bold">
+                        <span className="text-slate-900 font-black">{ts.slot}</span>
+                        <div className="flex items-center gap-2 font-mono text-[10px]">
+                          <span className="font-bold text-violet-950 bg-violet-100 px-2.5 py-0.5 rounded border border-violet-200">
+                            ₦{ts.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold border border-slate-200">
+                            {ts.count} transactions
+                          </span>
+                        </div>
                       </div>
-                      <div className="h-6 w-full bg-slate-50 border border-slate-200 rounded-md overflow-hidden relative">
+                      <div className="h-4 w-full bg-slate-100 border border-slate-250 rounded-lg overflow-hidden relative">
                         <div 
-                          className="h-full bg-violet-600 transition-all duration-500"
+                          className="h-full bg-violet-400 transition-all duration-500"
                           style={{ width: `${percent}%` }}
                         />
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-[10px] text-slate-900 font-black mix-blend-difference">
-                          ₦{ts.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
                       </div>
                     </div>
                   );

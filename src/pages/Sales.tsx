@@ -840,7 +840,7 @@ export default function Sales() {
             <div className="p-6 border-b border-slate-250 flex justify-between items-center flex-wrap gap-4">
               <h2 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
                 <History size={20} className="text-slate-800" />
-                History Log
+                History Log ({transactions.length})
               </h2>
               {sales.length > 0 && (
                 <button

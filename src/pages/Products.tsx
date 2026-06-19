@@ -396,7 +396,7 @@ export default function Products() {
         <div>
           <h1 className="text-3xl font-black text-slate-950 tracking-tight flex items-center gap-2">
             <ClipboardList className="text-slate-800" size={28} />
-            Products Inventory
+            Products Inventory ({products.length})
           </h1>
           <p className="text-slate-700 font-bold mt-1">Manage your product catalog and custom safety stock levels.</p>
         </div>
@@ -620,7 +620,7 @@ export default function Products() {
           <div>
             <h2 className="text-base font-extrabold text-slate-950 flex items-center gap-2">
               <History size={18} className="text-slate-800" />
-              Inventory Activity Audit Log
+              Inventory Activity Audit Log ({mergedLogs.length})
             </h2>
             <p className="text-xs text-slate-600 font-medium">Tracks additions, stock level adjustments, sales deductions, and deletions.</p>
           </div>
@@ -897,7 +897,7 @@ export default function Products() {
       {/* Product Deletion Accountability Modal */}
       {productToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 font-sans">
-          <div className="bg-white border-4 border-slate-950 rounded-2xl p-6 shadow-2xl w-full max-w-sm relative duration-200">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-sm relative duration-200">
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
