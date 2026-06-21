@@ -203,7 +203,7 @@ export default function Login() {
             {sessionTimeoutNotice && (
               <div className="mb-6 p-4 bg-sky-50 border-2 border-sky-300 text-sky-850 text-xs font-black rounded-xl flex items-center gap-2">
                 <AlertCircle size={16} className="text-sky-600 stroke-[3]" />
-                <span>Your login session has expired due to 15 minutes of inactivity. Please sign in again.</span>
+                <span>Your login session has expired due to 1 hour of inactivity. Please sign in again.</span>
               </div>
             )}
 

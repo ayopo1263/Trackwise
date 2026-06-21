@@ -88,11 +88,11 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Automatic session timeout after 15 minutes of inactivity
+  // Automatic session timeout after 1 hour of inactivity
   useEffect(() => {
     if (!session) return;
 
-    const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+    const TIMEOUT_DURATION = 60 * 60 * 1000; // 1 hour
     let timeoutId: NodeJS.Timeout;
 
     const resetTimer = () => {
@@ -101,7 +101,7 @@ export default function App() {
     };
 
     const handleAutoLogout = async () => {
-      console.warn("User has been inactive for more than 15 minutes. Auditing session expiration...");
+      console.warn("User has been inactive for more than 1 hour. Auditing session expiration...");
       try {
         await supabase.auth.signOut();
       } catch (err) {
