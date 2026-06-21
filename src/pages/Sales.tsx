@@ -41,6 +41,7 @@ export default function Sales() {
   const [selectedReceiptSales, setSelectedReceiptSales] = useState<(Sale & { product_name?: string })[] | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState<string>('');
+  const [historySearch, setHistorySearch] = useState<string>('');
 
   // Edit & Delete Transaction states
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
@@ -356,6 +357,29 @@ export default function Sales() {
       };
     }).sort((a, b) => new Date(b.timestampId).getTime() - new Date(a.timestampId).getTime());
   }, [sales]);
+
+  const filteredTransactions = React.useMemo(() => {
+    if (!historySearch.trim()) return transactions;
+    const query = historySearch.toLowerCase().trim();
+    return transactions.filter(tx => {
+      // 1. match customer name
+      const customer = (tx.items[0]?.customer_name || 'Walk-in Customer').toLowerCase();
+      if (customer.includes(query)) return true;
+
+      // 2. match product name
+      const hasProduct = tx.items.some(item =>
+        (item.product_name || 'Deleted Product').toLowerCase().includes(query)
+      );
+      if (hasProduct) return true;
+
+      // 3. match price (raw or formatted)
+      const rawPrice = tx.totalPrice.toString();
+      const formattedPrice = `₦${tx.totalPrice.toFixed(2)}`;
+      if (rawPrice.includes(query) || formattedPrice.toLowerCase().includes(query)) return true;
+
+      return false;
+    });
+  }, [transactions, historySearch]);
 
   const startEditTransaction = (tx: Transaction) => {
     setEditingTx(tx);
@@ -840,7 +864,7 @@ export default function Sales() {
             <div className="p-6 border-b border-slate-250 flex justify-between items-center flex-wrap gap-4">
               <h2 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
                 <History size={20} className="text-slate-800" />
-                History Log ({transactions.length})
+                History Log ({historySearch.trim() ? `${filteredTransactions.length}/${transactions.length}` : transactions.length})
               </h2>
               {sales.length > 0 && (
                 <button
@@ -864,144 +888,173 @@ export default function Sales() {
               </div>
             ) : (
               <div>
-                {/* Mobile View: Stacked Transaction list Cards */}
-                <div className="block md:hidden divide-y divide-slate-100">
-                  {transactions.map((tx) => (
-                    <div key={tx.timestampId} className="p-4 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-500 text-xs font-mono font-bold">
-                          {format(new Date(tx.timestampId), 'MMM d, HH:mm')}
-                        </span>
-                        
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => setSelectedReceiptSales(tx.items)}
-                            className="px-2 py-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer border border-slate-200 hover:border-slate-300 transition-all inline-flex items-center gap-1 text-[10px] font-black uppercase font-sans"
-                          >
-                            <FileText size={12} />
-                            <span>Receipt</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => startEditTransaction(tx)}
-                            className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-150 border border-slate-200 rounded-lg transition-colors cursor-pointer"
-                            title="Edit Transaction"
-                          >
-                            <Pencil size={12} />
-                          </button>
-
-                          <button
-                            onClick={() => setDeleteConfirmTx(tx)}
-                            className="p-1 text-slate-400 hover:text-red-650 hover:bg-red-50 border border-red-200 rounded-lg transition-colors cursor-pointer"
-                            title="Delete Transaction"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="space-y-1.5 min-w-0 flex-1">
-                          <span className="inline-block text-[10px] font-black text-slate-950 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase truncate">
-                            {tx.items[0]?.customer_name || 'Walk-in Customer'}
-                          </span>
-                          <div className="space-y-1">
-                            {tx.items.map((item, index) => (
-                              <div key={item.id || index} className="text-xs text-slate-900 font-extrabold flex justify-between pr-4">
-                                <span className="truncate pr-2">{item.product_name || 'Deleted Product'}</span>
-                                <span className="text-slate-500 font-semibold whitespace-nowrap">x{item.quantity}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-[9px] text-slate-450 uppercase font-black block tracking-wider">Total</span>
-                          <div className="text-sm font-black text-slate-950 font-mono">
-                            ₦{tx.totalPrice.toFixed(2)}
-                          </div>
-                          <span className="text-[10px] text-slate-500 font-bold block bg-slate-100/50 px-1 py-0.5 rounded border border-slate-205 mt-1 text-center font-sans">
-                            {tx.totalQuantity} items
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                {/* Search Bar */}
+                <div className="p-4 bg-slate-50 border-b border-slate-200">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search history by customer name, product, or price (e.g. walk-in, Pepsi, 500)..."
+                      value={historySearch}
+                      onChange={(e) => setHistorySearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border-2 border-slate-200 focus:border-slate-800 focus:ring-0 text-xs font-semibold rounded-lg text-slate-950 bg-white placeholder-slate-400 transition-colors outline-none"
+                    />
+                  </div>
                 </div>
 
-                {/* Desktop View: Full Grid Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="table-header">Date</th>
-                        <th className="table-header">Customer</th>
-                        <th className="table-header">Products List</th>
-                        <th className="table-header text-center flex-shrink-0">Qty</th>
-                        <th className="table-header text-right">Total</th>
-                        <th className="table-header text-center">Invoicing</th>
-                        <th className="table-header text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map((tx) => (
-                        <tr key={tx.timestampId} className="hover:bg-slate-50 transition-colors border-b border-slate-100">
-                          <td className="table-cell text-slate-500 text-xs font-semibold whitespace-nowrap">
-                            {format(new Date(tx.timestampId), 'MMM d, HH:mm')}
-                          </td>
-                          <td className="table-cell font-extrabold text-slate-900 whitespace-nowrap">
-                            <span className="text-xs font-black text-slate-950 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 uppercase">
-                              {tx.items[0]?.customer_name || 'Walk-in Customer'}
+                {filteredTransactions.length === 0 ? (
+                  <div className="p-12 text-center text-slate-500 font-extrabold flex flex-col items-center justify-center gap-2">
+                    <AlertCircle className="text-slate-400" size={24} />
+                    <span className="text-sm font-bold text-slate-700">No matching transactions found for "{historySearch}".</span>
+                    <button
+                      onClick={() => setHistorySearch('')}
+                      className="text-xs text-indigo-650 hover:text-indigo-800 underline font-extrabold mt-1"
+                    >
+                      Clear search filter
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Mobile View: Stacked Transaction list Cards */}
+                    <div className="block md:hidden divide-y divide-slate-100">
+                      {filteredTransactions.map((tx) => (
+                        <div key={tx.timestampId} className="p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-500 text-xs font-mono font-bold">
+                              {format(new Date(tx.timestampId), 'MMM d, HH:mm')}
                             </span>
-                          </td>
-                          <td className="table-cell font-bold text-slate-900">
-                            <div className="space-y-1 py-1">
-                              {tx.items.map((item, index) => (
-                                <div key={item.id || index} className="text-xs text-slate-900 font-extrabold">
-                                  {item.product_name || 'Deleted Product'}{" "}
-                                  <span className="text-slate-500 font-bold ml-1 text-[10px]">x{item.quantity}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="table-cell text-center font-bold text-slate-850 font-sans">{tx.totalQuantity}</td>
-                          <td className="table-cell text-right font-black text-slate-900 font-mono">
-                            ₦{tx.totalPrice.toFixed(2)}
-                          </td>
-                          <td className="table-cell text-center">
-                            <button
-                              onClick={() => setSelectedReceiptSales(tx.items)}
-                              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-950 cursor-pointer border border-slate-200 hover:border-slate-300 transition-all inline-flex items-center gap-1"
-                              title="Generate Invoice Receipt"
-                            >
-                              <FileText size={14} />
-                              <span className="text-[10px] font-black uppercase text-slate-700 font-sans">Receipt</span>
-                            </button>
-                          </td>
-                          <td className="table-cell text-right">
-                            <div className="flex justify-end gap-1.5">
+                            
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => setSelectedReceiptSales(tx.items)}
+                                className="px-2 py-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer border border-slate-200 hover:border-slate-300 transition-all inline-flex items-center gap-1 text-[10px] font-black uppercase font-sans"
+                              >
+                                <FileText size={12} />
+                                <span>Receipt</span>
+                              </button>
+                              
                               <button
                                 onClick={() => startEditTransaction(tx)}
-                                className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-slate-800 rounded-lg text-slate-800 hover:text-slate-950 transition-colors cursor-pointer text-[10px] font-extrabold uppercase flex items-center gap-1"
+                                className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-150 border border-slate-200 rounded-lg transition-colors cursor-pointer"
                                 title="Edit Transaction"
                               >
-                                <Pencil size={11} />
-                                <span>Edit</span>
+                                <Pencil size={12} />
                               </button>
+
                               <button
                                 onClick={() => setDeleteConfirmTx(tx)}
-                                className="p-1 px-2 hover:bg-red-50 border border-red-200 hover:border-red-300 rounded-lg text-slate-500 hover:text-red-600 transition-colors cursor-pointer text-xs"
+                                className="p-1 text-slate-400 hover:text-red-650 hover:bg-red-50 border border-red-200 rounded-lg transition-colors cursor-pointer"
                                 title="Delete Transaction"
                               >
-                                <Trash2 size={13} />
+                                <Trash2 size={12} />
                               </button>
                             </div>
-                          </td>
-                        </tr>
+                          </div>
+
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="space-y-1.5 min-w-0 flex-1">
+                              <span className="inline-block text-[10px] font-black text-slate-950 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase truncate">
+                                {tx.items[0]?.customer_name || 'Walk-in Customer'}
+                              </span>
+                              <div className="space-y-1">
+                                {tx.items.map((item, index) => (
+                                  <div key={item.id || index} className="text-xs text-slate-900 font-extrabold flex justify-between pr-4">
+                                    <span className="truncate pr-2">{item.product_name || 'Deleted Product'}</span>
+                                    <span className="text-slate-500 font-semibold whitespace-nowrap">x{item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="text-right flex-shrink-0">
+                              <span className="text-[9px] text-slate-450 uppercase font-black block tracking-wider">Total</span>
+                              <div className="text-sm font-black text-slate-950 font-mono">
+                                ₦{tx.totalPrice.toFixed(2)}
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-bold block bg-slate-100/50 px-1 py-0.5 rounded border border-slate-205 mt-1 text-center font-sans">
+                                {tx.totalQuantity} items
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+
+                    {/* Desktop View: Full Grid Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="table-header">Date</th>
+                            <th className="table-header">Customer</th>
+                            <th className="table-header">Products List</th>
+                            <th className="table-header text-center flex-shrink-0">Qty</th>
+                            <th className="table-header text-right">Total</th>
+                            <th className="table-header text-center">Invoicing</th>
+                            <th className="table-header text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredTransactions.map((tx) => (
+                            <tr key={tx.timestampId} className="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                              <td className="table-cell text-slate-500 text-xs font-semibold whitespace-nowrap">
+                                {format(new Date(tx.timestampId), 'MMM d, HH:mm')}
+                              </td>
+                              <td className="table-cell font-extrabold text-slate-900 whitespace-nowrap">
+                                <span className="text-xs font-black text-slate-950 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 uppercase">
+                                  {tx.items[0]?.customer_name || 'Walk-in Customer'}
+                                </span>
+                              </td>
+                              <td className="table-cell font-bold text-slate-900">
+                                <div className="space-y-1 py-1">
+                                  {tx.items.map((item, index) => (
+                                    <div key={item.id || index} className="text-xs text-slate-900 font-extrabold">
+                                      {item.product_name || 'Deleted Product'}{" "}
+                                      <span className="text-slate-500 font-bold ml-1 text-[10px]">x{item.quantity}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="table-cell text-center font-bold text-slate-850 font-sans">{tx.totalQuantity}</td>
+                              <td className="table-cell text-right font-black text-slate-900 font-mono">
+                                ₦{tx.totalPrice.toFixed(2)}
+                              </td>
+                              <td className="table-cell text-center">
+                                <button
+                                  onClick={() => setSelectedReceiptSales(tx.items)}
+                                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-950 cursor-pointer border border-slate-200 hover:border-slate-300 transition-all inline-flex items-center gap-1"
+                                  title="Generate Invoice Receipt"
+                                >
+                                  <FileText size={14} />
+                                  <span className="text-[10px] font-black uppercase text-slate-700 font-sans">Receipt</span>
+                                </button>
+                              </td>
+                              <td className="table-cell text-right">
+                                <div className="flex justify-end gap-1.5">
+                                  <button
+                                    onClick={() => startEditTransaction(tx)}
+                                    className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-slate-800 rounded-lg text-slate-800 hover:text-slate-950 transition-colors cursor-pointer text-[10px] font-extrabold uppercase flex items-center gap-1"
+                                    title="Edit Transaction"
+                                  >
+                                    <Pencil size={11} />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirmTx(tx)}
+                                    className="p-1 px-2 hover:bg-red-50 border border-red-200 hover:border-red-300 rounded-lg text-slate-500 hover:text-red-600 transition-colors cursor-pointer text-xs"
+                                    title="Delete Transaction"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
